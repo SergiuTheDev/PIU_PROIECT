@@ -19,22 +19,22 @@ namespace PortfolioTracker
 
             try
             {
-                Console.WriteLine("\\n--- INITIAL BUY ---");
-                manager.ExecuteBuyOrder(portofoliulMeu, appleStock, 10m, 150m);
-                manager.ExecuteBuyOrder(portofoliulMeu, bitcoinCrypto, 0.5m, 60000m);
+                Console.WriteLine("\n--- ADAUGARE INITIALA IN TRACKER ---");
+                manager.LogPurchase(portofoliulMeu, appleStock, 10m, 150m);
+                manager.LogPurchase(portofoliulMeu, bitcoinCrypto, 0.5m, 60000m);
 
                 // EX. Test invalid: Cantitate negativa va arunca throw.
-                // manager.ExecuteBuyOrder(portofoliulMeu, appleStock, -5m, 100m); 
+                // manager.LogPurchase(portofoliulMeu, appleStock, -5m, 100m); 
 
                 // Testam adaugarea de pozitii suplimentare pentru acelasi instrument (mediazare) 
-                Console.WriteLine("\\n--- DCA BUY ---");
-                manager.ExecuteBuyOrder(portofoliulMeu, appleStock, 10m, 130m); 
+                Console.WriteLine("\n--- ADAUGARE SUPLIMENTARA (DCA) ---");
+                manager.LogPurchase(portofoliulMeu, appleStock, 10m, 130m); 
                 
-                // Exemplu - manager.ExecuteSellOrder(portofoliulMeu, "BTC");
+                // Exemplu - manager.LogSale(portofoliulMeu, "BTC");
             }
             catch(Exception ex) 
             {
-                Console.WriteLine($"\\n[EROARE FATALA]: {ex.Message}");
+                Console.WriteLine($"\n[EROARE FATALA]: {ex.Message}");
             }
 
             // Rezumat final

@@ -29,7 +29,7 @@ namespace PortfolioTracker.Models
         }
 
         // Adauga o entitate noua sau ii face update daca exista deja 
-        public void BuyOrUpdatePosition(Asset asset, decimal quantity, decimal purchasePrice)
+        public void AddOrUpdatePosition(Asset asset, decimal quantity, decimal purchasePrice)
         {
             if (asset == null) throw new ArgumentNullException(nameof(asset));
 
@@ -47,7 +47,7 @@ namespace PortfolioTracker.Models
             }
         }
 
-        public bool SellPosition(string symbol)
+        public bool RemovePosition(string symbol)
         {
             var targetPosition = _positions.FirstOrDefault(p => p.AssetDetails.Symbol.Equals(symbol, StringComparison.OrdinalIgnoreCase));
             
