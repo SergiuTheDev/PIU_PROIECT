@@ -1,43 +1,32 @@
-﻿using System;
-using System.Linq;
+using System;
 using PortfolioTracker.Models;
 
 namespace PortfolioTracker.Services
 {
-    // 2. BUSINESS LOGIC: Clasa care se ocupa de operatiuni
+    // Realizeaza tranzactiile in portofoliul utilizatorului pe diverse instrumente
     public class PortfolioManager
     {
-        // Metoda sa adaugam chestii noi in portofoliu
-        public void AddOrUpdateAsset(Portfolio portfolio, Asset newAsset)
+        public void ExecuteBuyOrder(Portfolio portfolio, Asset asset, decimal quantity, decimal purchasePrice)
         {
-            var existingAsset = portfolio.Assets.FirstOrDefault(a => a.Symbol.Equals(newAsset.Symbol, StringComparison.OrdinalIgnoreCase));
-
-            if (existingAsset != null)
-            {
-                // Calculam noul pret mediu de achizitie (DCA)
-                decimal totalCostExisting = existingAsset.Quantity * existingAsset.AveragePurchasePrice;
-                decimal totalCostNew = newAsset.Quantity * newAsset.AveragePurchasePrice;
-
-                existingAsset.Quantity += newAsset.Quantity;
-                existingAsset.AveragePurchasePrice = (totalCostExisting + totalCostNew) / existingAsset.Quantity;
-
-                // Actualizam si pretul curent la cel mai recent
-                existingAsset.CurrentPrice = newAsset.CurrentPrice;
-            }
-            else
-            {
-                portfolio.Assets.Add(newAsset);
-            }
+            Console.WriteLine($"[MANAGER] Se executa ordin de CUMPARARE pentru portofoliul \"{portfolio.OwnerName}\"...");
+            Console.WriteLine($"[MANAGER] Tranzactie: +{quantity}x {asset.Symbol} @ {purchasePrice:F2} USD.");
+            
+            // Trimite mai departe in logica portofoliului
+            portfolio.BuyOrUpdatePosition(asset, quantity, purchasePrice);
+            
+            // (aici va urma instiintarea de UI Update sau salvarea in db a facturii efectuate)
+            Console.WriteLine("[MANAGER] Ordin executat cu succes!");
         }
 
-        // Scoatem o actiune din lista dupa simbol
-        public void RemoveAsset(Portfolio portfolio, string symbol)
+        public void ExecuteSellOrder(Portfolio portfolio, string assetSymbol)
         {
-            var assetToRemove = portfolio.Assets.FirstOrDefault(a => a.Symbol.Equals(symbol, StringComparison.OrdinalIgnoreCase));
-            if (assetToRemove != null)
-            {
-                portfolio.Assets.Remove(assetToRemove);
-            }
+            Console.WriteLine($"[MANAGER] Se executa ordin de VANZARE totala: pozitia {assetSymbol}...");
+            bool success = portfolio.SellPosition(assetSymbol);
+
+            if (success)
+                Console.WriteLine("[MANAGER] Pozitia stearsa cu succes!");
+            else
+                Console.WriteLine("[MANAGER] Eroare: Pozitia nu a fost gasita in portofoliu.");
         }
     }
 }

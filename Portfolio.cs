@@ -1,24 +1,62 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace PortfolioTracker.Models
 {
-    // 1. DATA MODEL: Clasa care tine doar datele portofoliului
+    // Modeleaza portofoliul financiar al utilizatorului
     public class Portfolio
     {
-        public Guid Id { get; set; } = Guid.NewGuid(); // Adaugat pentru Baza de Date
-        public string OwnerName { get; set; }
-        public List<Asset> Assets { get; set; }
+        public Guid Id { get; private set; } = Guid.NewGuid();
+        public string OwnerName { get; private set; }
 
-        public decimal TotalPortfolioValue => Assets.Sum(a => a.CurrentValue);
-        public decimal TotalPortfolioInvested => Assets.Sum(a => a.TotalInvested);
+        private readonly List<Position> _positions;
+        
+        // Expunem lista doar citire pentru siguranta datelor
+        public IReadOnlyList<Position> Positions => _positions.AsReadOnly();
+
+        public decimal TotalPortfolioValue => _positions.Sum(p => p.CurrentValue);
+        public decimal TotalPortfolioInvested => _positions.Sum(p => p.TotalInvested);
         public decimal TotalPortfolioProfitLoss => TotalPortfolioValue - TotalPortfolioInvested;
 
         public Portfolio(string ownerName)
         {
+            if (string.IsNullOrWhiteSpace(ownerName))
+                throw new ArgumentException("Numele detinatorului nu poate fi gol.");
+
             OwnerName = ownerName;
-            Assets = new List<Asset>();
+            _positions = new List<Position>();
+        }
+
+        // Adauga o entitate noua sau ii face update daca exista deja 
+        public void BuyOrUpdatePosition(Asset asset, decimal quantity, decimal purchasePrice)
+        {
+            if (asset == null) throw new ArgumentNullException(nameof(asset));
+
+            var existingPosition = _positions.FirstOrDefault(p => p.AssetDetails.Symbol.Equals(asset.Symbol, StringComparison.OrdinalIgnoreCase));
+
+            if (existingPosition != null)
+            {
+                // Daca o detinem deja, recalculam media de cumparare si adaugam actiunile noi
+                existingPosition.AddMoreShares(quantity, purchasePrice);
+            }
+            else
+            {
+                // In caz contrar, o instantiem in portofoliu
+                _positions.Add(new Position(asset, quantity, purchasePrice));
+            }
+        }
+
+        public bool SellPosition(string symbol)
+        {
+            var targetPosition = _positions.FirstOrDefault(p => p.AssetDetails.Symbol.Equals(symbol, StringComparison.OrdinalIgnoreCase));
+            
+            if (targetPosition != null)
+            {
+                _positions.Remove(targetPosition);
+                return true;
+            }
+            return false;
         }
     }
 }

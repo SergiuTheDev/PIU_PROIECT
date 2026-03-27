@@ -1,38 +1,30 @@
-﻿using System;
+using System;
 
 namespace PortfolioTracker.Models
 {
-    // Clasa de baza pentru un activ
+    // Clasa ce reprezinta un instrument financiar de pe piata 
     public class Asset
     {
-        public Guid Id { get; set; } = Guid.NewGuid();
-        public string Symbol { get; set; }
-        public string Name { get; set; }
-        public decimal Quantity { get; set; }
-        public decimal AveragePurchasePrice { get; set; }
+        public Guid Id { get; private set; } 
+        
+        public string Symbol { get; private set; }
+        public string Name { get; private set; }
+        
         public decimal CurrentPrice { get; set; }
 
-        // Proprietati calculate (Data Binding pentru UI)
-        public decimal TotalInvested => Quantity * AveragePurchasePrice;
-        public decimal CurrentValue => Quantity * CurrentPrice;
-        public decimal ProfitLoss => CurrentValue - TotalInvested;
-
-        public decimal ProfitLossPercentage
+        public Asset(string symbol, string name, decimal initialPrice)
         {
-            get
-            {
-                if (TotalInvested == 0) return 0;
-                return (ProfitLoss / TotalInvested) * 100;
-            }
-        }
+            // Verificam datele la instantiere
+            if (string.IsNullOrWhiteSpace(symbol))
+                throw new ArgumentException("Simbolul nu poate fi gol.", nameof(symbol));
+                
+            if (initialPrice < 0)
+                throw new ArgumentException("Pretul initial nu poate fi negativ.", nameof(initialPrice));
 
-        public Asset(string symbol, string name, decimal quantity, decimal averagePurchasePrice)
-        {
+            Id = Guid.NewGuid(); 
             Symbol = symbol;
             Name = name;
-            Quantity = quantity;
-            AveragePurchasePrice = averagePurchasePrice;
-            CurrentPrice = averagePurchasePrice;
+            CurrentPrice = initialPrice;
         }
     }
 }
