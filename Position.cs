@@ -50,8 +50,6 @@ namespace PortfolioTracker.Models
 
             Quantity += newQuantity;
             AveragePurchasePrice = (totalCostExisting + totalCostNew) / Quantity;
-            
-            AssetDetails.CurrentPrice = purchasePrice;
         }
     }
 }

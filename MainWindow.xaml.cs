@@ -1,6 +1,9 @@
 using System;
 using System.Windows;
 using System.Windows.Media;
+using System.Net.Http;
+using System.Text.Json;
+using System.Threading.Tasks;
 using PortfolioTracker.Models;
 using PortfolioTracker.Services;
 
@@ -33,7 +36,7 @@ namespace PortfolioTracker
             RefreshUI();
         }
 
-        private void BtnExecute_Click(object sender, RoutedEventArgs e)
+        private async void BtnExecute_Click(object sender, RoutedEventArgs e)
         {
             if (chkConfirm.IsChecked != true)
             {
@@ -41,7 +44,7 @@ namespace PortfolioTracker
                 return;
             }
 
-            string symbol = txtSymbol.Text.Trim();
+            string symbol = txtSymbol.Text.Trim().ToUpper();
             
             if (string.IsNullOrWhiteSpace(symbol))
             {
@@ -51,34 +54,57 @@ namespace PortfolioTracker
 
             try
             {
+                btnExecute.IsEnabled = false;
+
                 if (rbBuy.IsChecked == true)
                 {
-                    // Cumpărare (Adăugare)
-                    string name = string.IsNullOrWhiteSpace(txtName.Text) ? "Necunoscut" : txtName.Text.Trim();
-                    
                     if (!decimal.TryParse(txtQuantity.Text, out decimal quantity) || quantity <= 0)
                         throw new Exception("Cantitatea trebuie să fie un număr pozitiv.");
                         
-                    if (!decimal.TryParse(txtPrice.Text, out decimal price) || price < 0)
-                        throw new Exception("Prețul trebuie să fie un număr pozitiv.");
+                    if (!decimal.TryParse(txtPurchasePrice.Text, out decimal userPurchasePrice) || userPurchasePrice < 0)
+                        throw new Exception("Prețul de achiziție trebuie să fie un număr pozitiv.");
+
+                    // Fetch data from API automatically
+                    decimal price = 0;
+                    string name = symbol;
+
+                    using (HttpClient client = new HttpClient())
+                    {
+                        client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0");
+                        string url = $"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}";
+                        string response = await client.GetStringAsync(url);
+
+                        using (JsonDocument doc = JsonDocument.Parse(response))
+                        {
+                            var root = doc.RootElement;
+                            var result = root.GetProperty("chart").GetProperty("result")[0];
+                            var meta = result.GetProperty("meta");
+
+                            if (meta.TryGetProperty("regularMarketPrice", out JsonElement priceElement))
+                                price = priceElement.GetDecimal();
+                            else
+                                throw new Exception("Nu s-a putut găsi prețul curent pe piață.");
+
+                            if (meta.TryGetProperty("shortName", out JsonElement nameElement))
+                                name = nameElement.GetString() ?? symbol;
+                        }
+                    }
 
                     Asset asset = new Asset(symbol, name, price);
-                    _manager.LogPurchase(_portfolio, asset, quantity, price);
+                    _manager.LogPurchase(_portfolio, asset, quantity, userPurchasePrice);
                     
-                    MessageBox.Show($"Ați cumpărat cu succes {quantity} x {symbol}.", "Succes", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show($"Ați introdus cu succes {quantity} x {symbol} ({name}) la prețul de {userPurchasePrice:F2} USD/buc.", "Succes", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else if (rbSell.IsChecked == true)
                 {
-                    // Vânzare (Ștergere totală poziție pentru simplitate)
                     _manager.LogSale(_portfolio, symbol);
                     MessageBox.Show($"Ați vândut (șters) poziția {symbol}.", "Succes", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
 
                 // Curățăm input-urile
                 txtSymbol.Clear();
-                txtName.Clear();
                 txtQuantity.Clear();
-                txtPrice.Clear();
+                txtPurchasePrice.Clear();
                 chkConfirm.IsChecked = false;
 
                 RefreshUI();
@@ -87,26 +113,72 @@ namespace PortfolioTracker
             {
                 MessageBox.Show(ex.Message, "Eroare la procesare", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+            finally
+            {
+                btnExecute.IsEnabled = true;
+            }
         }
 
         private void RbTransaction_Changed(object sender, RoutedEventArgs e)
         {
-            // Ascundem controalele inutile dacă este Vânzare
-            if (rbSell != null && rbBuy != null && txtName != null)
+            if (rbSell != null && rbBuy != null && txtQuantity != null && txtPurchasePrice != null)
             {
                 bool isBuy = rbBuy.IsChecked == true;
-                
-                txtName.IsEnabled = isBuy;
                 txtQuantity.IsEnabled = isBuy;
-                txtPrice.IsEnabled = isBuy;
-                
-                lblAssetName.Opacity = isBuy ? 1.0 : 0.5;
+                txtPurchasePrice.IsEnabled = isBuy;
                 lblQuantity.Opacity = isBuy ? 1.0 : 0.5;
-                lblPrice.Opacity = isBuy ? 1.0 : 0.5;
+                if (lblPurchasePrice != null) lblPurchasePrice.Opacity = isBuy ? 1.0 : 0.5;
             }
         }
 
-        private void RefreshUI()
+        private async void BtnRefreshAll_Click(object sender, RoutedEventArgs e)
+        {
+            if (_portfolio.Positions.Count == 0)
+            {
+                MessageBox.Show("Portofoliul este gol.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            try
+            {
+                btnRefreshAll.IsEnabled = false;
+                btnRefreshAll.Content = "Se actualizează...";
+
+                using (HttpClient client = new HttpClient())
+                {
+                    client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0");
+
+                    foreach (var position in _portfolio.Positions)
+                    {
+                        string symbol = position.AssetDetails.Symbol;
+                        string url = $"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}";
+                        try
+                        {
+                            string response = await client.GetStringAsync(url);
+                            using (JsonDocument doc = JsonDocument.Parse(response))
+                            {
+                                var meta = doc.RootElement.GetProperty("chart").GetProperty("result")[0].GetProperty("meta");
+                                if (meta.TryGetProperty("regularMarketPrice", out JsonElement priceElement))
+                                {
+                                    position.AssetDetails.CurrentPrice = priceElement.GetDecimal();
+                                }
+                            }
+                        }
+                        catch
+                        {
+                            // Ignorăm erorile punctuale per simbol la actualizarea globală
+                        }
+                    }
+                }
+
+                RefreshUI();
+            }
+            finally
+            {
+                btnRefreshAll.IsEnabled = true;
+                btnRefreshAll.Content = "🔄 Actualizează Prețurile";
+            }
+        }        private void RefreshUI()
         {
             // Actualizăm DataGrid-ul
             gridPositions.ItemsSource = null;

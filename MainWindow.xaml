@@ -23,14 +23,11 @@
                 <TextBlock Text="Simbol Activ (ex: AAPL):" Margin="0,5,0,2"/>
                 <TextBox x:Name="txtSymbol" Margin="0,0,0,10" />
 
-                <TextBlock x:Name="lblAssetName" Text="Nume Activ:" Margin="0,5,0,2"/>
-                <TextBox x:Name="txtName" Margin="0,0,0,10" />
-
                 <TextBlock x:Name="lblQuantity" Text="Cantitate:" Margin="0,5,0,2"/>
                 <TextBox x:Name="txtQuantity" Margin="0,0,0,10" />
 
-                <TextBlock x:Name="lblPrice" Text="Preț pe acțiune (USD):" Margin="0,5,0,2"/>
-                <TextBox x:Name="txtPrice" Margin="0,0,0,10" />
+                <TextBlock x:Name="lblPurchasePrice" Text="Prețul tău de achiziție (USD):" Margin="0,5,0,2"/>
+                <TextBox x:Name="txtPurchasePrice" Margin="0,0,0,10" />
 
                 <!-- Checkbox pentru confirmare -->
                 <CheckBox x:Name="chkConfirm" Content="Confirm datele introduse" Margin="0,5,0,15" />
@@ -43,6 +40,7 @@
         <!-- Dreapta: DataGrid si Statistici -->
         <Grid Grid.Column="1">
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
@@ -73,14 +71,18 @@
                 </Grid>
             </Border>
 
+            <Button x:Name="btnRefreshAll" Grid.Row="1" Content="🔄 Actualizează Prețurile" Width="180" HorizontalAlignment="Right" Margin="0,0,0,5" Padding="5" Click="BtnRefreshAll_Click"/>
+
             <!-- DataGrid Pozitii -->
-            <DataGrid x:Name="gridPositions" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True" SelectionMode="Single">
+            <DataGrid x:Name="gridPositions" Grid.Row="2" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True" SelectionMode="Single">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Simbol" Binding="{Binding AssetDetails.Symbol}" Width="*" />
                     <DataGridTextColumn Header="Nume" Binding="{Binding AssetDetails.Name}" Width="1.5*" />
                     <DataGridTextColumn Header="Cantitate" Binding="{Binding Quantity}" Width="*" />
+                    <DataGridTextColumn Header="Preț Curent (Piață)" Binding="{Binding AssetDetails.CurrentPrice, StringFormat={}{0:F2}}" Width="*" />
                     <DataGridTextColumn Header="Preț Mediu" Binding="{Binding AveragePurchasePrice, StringFormat={}{0:F2}}" Width="*" />
                     <DataGridTextColumn Header="Total Investit" Binding="{Binding TotalInvested, StringFormat={}{0:F2}}" Width="*" />
+                    <DataGridTextColumn Header="Valoare Curentă" Binding="{Binding CurrentValue, StringFormat={}{0:F2}}" Width="*" />
                     <DataGridTextColumn Header="P/L (%)" Binding="{Binding ProfitLossPercentage, StringFormat={}{0:F2}%}" Width="*" />
                 </DataGrid.Columns>
             </DataGrid>
