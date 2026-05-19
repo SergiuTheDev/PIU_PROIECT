@@ -26,7 +26,7 @@ namespace PortfolioTracker.Services
             if (success)
                 Console.WriteLine("[MANAGER] Pozitia a fost stearsa cu succes din tracker!");
             else
-                Console.WriteLine("[MANAGER] Eroare: Pozitia nu a fost gasita in portofoliu.");
+                throw new Exception($"Eroare: Nu s-a găsit nicio poziție deschisă cu simbolul {assetSymbol} în portofoliu.");
         }
     }
 }
