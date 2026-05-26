@@ -5,12 +5,14 @@ namespace PortfolioTracker.Models
     // Clasa ce reprezinta un instrument financiar de pe piata 
     public class Asset
     {
-        public Guid Id { get; private set; } 
+        public Guid Id { get; set; } 
         
-        public string Symbol { get; private set; }
-        public string Name { get; private set; }
+        public string Symbol { get; set; }
+        public string Name { get; set; }
         
         public decimal CurrentPrice { get; set; }
+
+        public Asset() { }
 
         public Asset(string symbol, string name, decimal initialPrice)
         {

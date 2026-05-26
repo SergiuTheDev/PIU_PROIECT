@@ -7,17 +7,16 @@ namespace PortfolioTracker.Models
     // Modeleaza portofoliul financiar al utilizatorului
     public class Portfolio
     {
-        public Guid Id { get; private set; } = Guid.NewGuid();
-        public string OwnerName { get; private set; }
+        public Guid Id { get; set; } = Guid.NewGuid();
+        public string OwnerName { get; set; }
 
-        private readonly List<Position> _positions;
-        
-        // Expunem lista doar citire pentru siguranta datelor
-        public IReadOnlyList<Position> Positions => _positions.AsReadOnly();
+        public List<Position> Positions { get; set; } = new List<Position>();
 
-        public decimal TotalPortfolioValue => _positions.Sum(p => p.CurrentValue);
-        public decimal TotalPortfolioInvested => _positions.Sum(p => p.TotalInvested);
+        public decimal TotalPortfolioValue => Positions.Sum(p => p.CurrentValue);
+        public decimal TotalPortfolioInvested => Positions.Sum(p => p.TotalInvested);
         public decimal TotalPortfolioProfitLoss => TotalPortfolioValue - TotalPortfolioInvested;
+
+        public Portfolio() { }
 
         public Portfolio(string ownerName)
         {
@@ -25,7 +24,7 @@ namespace PortfolioTracker.Models
                 throw new ArgumentException("Numele detinatorului nu poate fi gol.");
 
             OwnerName = ownerName;
-            _positions = new List<Position>();
+            Positions = new List<Position>();
         }
 
         // Adauga o entitate noua sau ii face update daca exista deja 
@@ -33,7 +32,7 @@ namespace PortfolioTracker.Models
         {
             if (asset == null) throw new ArgumentNullException(nameof(asset));
 
-            var existingPosition = _positions.FirstOrDefault(p => p.AssetDetails.Symbol.Equals(asset.Symbol, StringComparison.OrdinalIgnoreCase));
+            var existingPosition = Positions.FirstOrDefault(p => p.AssetDetails.Symbol.Equals(asset.Symbol, StringComparison.OrdinalIgnoreCase));
 
             if (existingPosition != null)
             {
@@ -43,20 +42,35 @@ namespace PortfolioTracker.Models
             else
             {
                 // In caz contrar, o instantiem in portofoliu
-                _positions.Add(new Position(asset, quantity, purchasePrice));
+                Positions.Add(new Position(asset, quantity, purchasePrice));
             }
         }
 
         public bool RemovePosition(string symbol)
         {
-            var targetPosition = _positions.FirstOrDefault(p => p.AssetDetails.Symbol.Equals(symbol, StringComparison.OrdinalIgnoreCase));
+            var targetPosition = Positions.FirstOrDefault(p => p.AssetDetails.Symbol.Equals(symbol, StringComparison.OrdinalIgnoreCase));
             
             if (targetPosition != null)
             {
-                _positions.Remove(targetPosition);
+                Positions.Remove(targetPosition);
                 return true;
             }
             return false;
+        }
+
+        public void SellPosition(string symbol, decimal quantityToSell)
+        {
+            var targetPosition = Positions.FirstOrDefault(p => p.AssetDetails.Symbol.Equals(symbol, StringComparison.OrdinalIgnoreCase));
+            if (targetPosition == null) throw new Exception($"Nu s-a găsit nicio poziție deschisă cu simbolul {symbol} în portofoliu.");
+
+            if (quantityToSell >= targetPosition.Quantity)
+            {
+                Positions.Remove(targetPosition); // Vinde tot
+            }
+            else
+            {
+                targetPosition.RemoveShares(quantityToSell); // Vinde partial
+            }
         }
     }
 }

@@ -5,12 +5,12 @@ namespace PortfolioTracker.Models
     // Clasa ce memoreaza pozitia/investitia noastra pe un anumit activ
     public class Position
     {
-        public Guid Id { get; private set; }
+        public Guid Id { get; set; }
         
-        public Asset AssetDetails { get; private set; } // Legatura catre activul de pe bursa/piata
+        public Asset AssetDetails { get; set; } // Legatura catre activul de pe bursa/piata
         
-        public decimal Quantity { get; private set; }
-        public decimal AveragePurchasePrice { get; private set; }
+        public decimal Quantity { get; set; }
+        public decimal AveragePurchasePrice { get; set; }
 
         // Proprietati calculate pentru randament
         public decimal TotalInvested => Quantity * AveragePurchasePrice;
@@ -26,6 +26,8 @@ namespace PortfolioTracker.Models
             }
         }
 
+        public Position() { }
+
         public Position(Asset asset, decimal quantity, decimal purchasePrice)
         {
             // Evitam crearea unor pozitii invalide
@@ -37,6 +39,14 @@ namespace PortfolioTracker.Models
             AssetDetails = asset;
             Quantity = quantity;
             AveragePurchasePrice = purchasePrice;
+        }
+
+        public void RemoveShares(decimal quantityToRemove)
+        {
+            if (quantityToRemove <= 0) throw new ArgumentException("Cantitatea eliminată trebuie să fie pozitivă.");
+            if (quantityToRemove > Quantity) throw new InvalidOperationException("Nu poți vinde mai multe acțiuni decât deții.");
+            
+            Quantity -= quantityToRemove;
         }
 
         // Calculeaza noul pret mediu cand mai adaugam actiuni (Dollar Cost Averaging)

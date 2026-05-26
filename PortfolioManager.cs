@@ -18,15 +18,18 @@ namespace PortfolioTracker.Services
             Console.WriteLine("[MANAGER] Inregistrare efectuata cu succes!");
         }
 
-        public void LogSale(Portfolio portfolio, string assetSymbol)
+        public void LogSale(Portfolio portfolio, string assetSymbol, decimal? quantity = null)
         {
-            Console.WriteLine($"[MANAGER] Se inregistreaza ELIMINAREA totala a pozitiei: {assetSymbol}...");
-            bool success = portfolio.RemovePosition(assetSymbol);
-
-            if (success)
-                Console.WriteLine("[MANAGER] Pozitia a fost stearsa cu succes din tracker!");
+            if (quantity.HasValue)
+            {
+                portfolio.SellPosition(assetSymbol, quantity.Value);
+            }
             else
-                throw new Exception($"Eroare: Nu s-a găsit nicio poziție deschisă cu simbolul {assetSymbol} în portofoliu.");
+            {
+                bool success = portfolio.RemovePosition(assetSymbol);
+                if (!success)
+                    throw new Exception($"Eroare: Nu s-a găsit nicio poziție deschisă cu simbolul {assetSymbol} în portofoliu.");
+            }
         }
     }
 }
